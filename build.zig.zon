@@ -1,9 +1,8 @@
 .{
     .name = .mica,
-    .version = "0.0.0",
+    .version = "0.0.1",
     .fingerprint = 0xdb6b69c77f837337,
-    .minimum_zig_version = "0.15.2",
-    .dependencies = .{},
+    .minimum_zig_version = "0.16.0",
     .paths = .{
         "build.zig",
         "build.zig.zon",

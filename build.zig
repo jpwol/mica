@@ -1,9 +1,36 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const lib_mod = b.addModule("mica", .{
-        .target = b.standardTargetOptions(.{}),
-        .optimize = b.standardOptimizeOption(.{}),
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const translate_c = b.addTranslateC(.{
+        .root_source_file = b.path("include/c.h"),
+        .target = target,
+        .optimize = optimize,
     });
-    _ = lib_mod;
+    translate_c.linkSystemLibrary("X11", .{});
+    translate_c.linkSystemLibrary("Xrandr", .{});
+    translate_c.linkSystemLibrary("Xext", .{});
+
+    const mod = b.addModule("mica", .{
+        .root_source_file = b.path("src/mica.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .imports = &.{
+            .{
+                .name = "xlib",
+                .module = translate_c.createModule(),
+            },
+        },
+    });
+
+    const exe = b.addExecutable(.{
+        .name = "",
+        .root_module = mod,
+        .use_llvm = true,
+    });
+
+    b.installArtifact(exe);
 }
