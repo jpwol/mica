@@ -13,10 +13,9 @@ const IPC_RMID = 0;
 
 pub const SoftwareRenderer = struct {
     use_shm: bool,
-    shm_infos: *[2]xlib.XShmSegmentInfo,
-    ximages: [2]*xlib.XImage,
-    buffers: [2][]u8,
-    front: u1,
+    shm_info: *xlib.XShmSegmentInfo,
+    ximage: *xlib.XImage,
+    buffer: []u8,
     gc: xlib.GC,
     width: u32,
     height: u32,
@@ -24,8 +23,8 @@ pub const SoftwareRenderer = struct {
 };
 
 pub fn createSoftwareRenderer(allocator: std.mem.Allocator, win: *Window) !SoftwareRenderer {
-    const shm_available = xlib.XShmQueryExtension(win.display) != 0;
-    // const shm_available = false;
+    // const shm_available = xlib.XShmQueryExtension(win.display) != 0;
+    const shm_available = false;
 
     if (shm_available) {
         return try createShmRenderer(allocator, win);
@@ -44,115 +43,105 @@ fn createShmRenderer(allocator: std.mem.Allocator, win: *Window) !SoftwareRender
     const visual = xlib.DefaultVisual(win.display, win.screen);
     const depth = xlib.DefaultDepth(win.display, win.screen);
 
-    const shm_infos = try allocator.create([2]xlib.XShmSegmentInfo);
-    shm_infos.* = undefined;
-    errdefer allocator.destroy(shm_infos);
+    const shm_info = try allocator.create(xlib.XShmSegmentInfo);
+    errdefer allocator.destroy(shm_info);
 
-    var ximages: [2]*xlib.XImage = undefined;
+    var ximage: *xlib.XImage = undefined;
 
-    var i: usize = 0;
     errdefer {
-        var j: usize = 0;
-        while (j < i) : (j += 1) {
-            _ = xlib.XShmDetach(win.display, &shm_infos.*[j]);
+        _ = xlib.XShmDetach(win.display, shm_info);
 
-            ximages[j].*.data = null;
-            _ = ximages[j].*.f.destroy_image.?(ximages[j]);
+        ximage.*.data = null;
+        _ = ximage.*.f.destroy_image.?(ximage);
 
-            _ = sys.syscall1(
-                .shmdt,
-                @intFromPtr(shm_infos.*[j].shmaddr),
-            );
+        _ = sys.syscall1(
+            .shmdt,
+            @intFromPtr(shm_info.*.shmaddr),
+        );
 
-            _ = sys.syscall3(
-                .shmctl,
-                @intCast(shm_infos.*[j].shmid),
-                IPC_RMID,
-                0,
-            );
-        }
+        _ = sys.syscall3(
+            .shmctl,
+            @intCast(shm_info.*.shmid),
+            IPC_RMID,
+            0,
+        );
     }
 
-    while (i < 2) : (i += 1) {
-        const ximage = xlib.XShmCreateImage(
-            win.display, 
-            visual, 
-            @intCast(depth),
-            xlib.ZPixmap, 
-            null,
-            &shm_infos.*[i],
-            width, 
-            height,
-        ) orelse return error.XShmCreateImageFailed;
+    ximage = xlib.XShmCreateImage(
+        win.display, 
+        visual, 
+        @intCast(depth),
+        xlib.ZPixmap, 
+        null,
+        &shm_info.*,
+        width, 
+        height,
+    ) orelse return error.XShmCreateImageFailed;
 
 
-        const size = 
-            @as(usize, @intCast(ximage.*.bytes_per_line)) *
-            @as(usize, @intCast(ximage.*.height));
+    const size = 
+        @as(usize, @intCast(ximage.*.bytes_per_line)) *
+        @as(usize, @intCast(ximage.*.height));
 
-        const shmid_raw = sys.syscall3(
-            .shmget,
-            IPC_PRIVATE,
-            size,
-            IPC_CREAT | 0o600
-        );
+    const shmid_raw = sys.syscall3(
+        .shmget,
+        IPC_PRIVATE,
+        size,
+        IPC_CREAT | 0o600
+    );
 
-        if (sys.errno(shmid_raw) != .SUCCESS){
-            ximage.*.data = null;
-            _ = ximage.*.f.destroy_image.?(ximage);
-            return error.ShmGetFailed;
-        }
-        const shmid: i32 = @intCast(shmid_raw);
+    if (sys.errno(shmid_raw) != .SUCCESS){
+        ximage.*.data = null;
+        _ = ximage.*.f.destroy_image.?(ximage);
+        return error.ShmGetFailed;
+    }
+    const shmid: i32 = @intCast(shmid_raw);
 
-        const shmaddr_raw = sys.syscall3(
-            .shmat,
+    const shmaddr_raw = sys.syscall3(
+        .shmat,
+        @intCast(shmid),
+        0,
+        0
+    );
+
+    if (sys.errno(shmaddr_raw) != .SUCCESS) {
+        _ = sys.syscall3(
+            .shmctl,
             @intCast(shmid),
+            IPC_RMID,
             0,
-            0
         );
 
-        if (sys.errno(shmaddr_raw) != .SUCCESS) {
-            _ = sys.syscall3(
-                .shmctl,
-                @intCast(shmid),
-                IPC_RMID,
-                0,
-            );
+        ximage.*.data = null;
+        _ = ximage.*.f.destroy_image.?(ximage);
 
-            ximage.*.data = null;
-            _ = ximage.*.f.destroy_image.?(ximage);
+        return error.ShmAttachFailed;
+    }
+    const shmaddr: *anyopaque = @ptrFromInt(shmaddr_raw);
 
-            return error.ShmAttachFailed;
-        }
-        const shmaddr: *anyopaque = @ptrFromInt(shmaddr_raw);
+    shm_info.*.shmid = shmid;
+    shm_info.*.shmaddr = @ptrCast(shmaddr);
+    shm_info.*.readOnly = xlib.False;
 
-        shm_infos.*[i].shmid = shmid;
-        shm_infos.*[i].shmaddr = @ptrCast(shmaddr);
-        shm_infos.*[i].readOnly = xlib.False;
+    ximage.*.data = @ptrCast(shmaddr);
 
-        ximage.*.data = @ptrCast(shmaddr);
+    if (xlib.XShmAttach(win.display, &shm_info.*) == 0) {
+        ximage.*.data = null;
+        _ = ximage.*.f.destroy_image.?(ximage);
 
-        if (xlib.XShmAttach(win.display, &shm_infos.*[i]) == 0) {
-            ximage.*.data = null;
-            _ = ximage.*.f.destroy_image.?(ximage);
+        _ = sys.syscall1(
+            .shmdt, 
+            shmaddr_raw,
+        );
 
-            _ = sys.syscall1(
-                .shmdt, 
-                shmaddr_raw,
-            );
+        _ = sys.syscall3(
+            .shmctl, 
+            @intCast(shmid), 
+            IPC_RMID, 
+            0,
+        );
 
-            _ = sys.syscall3(
-                .shmctl, 
-                @intCast(shmid), 
-                IPC_RMID, 
-                0,
-            );
-
-            return error.XShmAttachFailed;
-        }
-
-
-        ximages[i] = ximage;
+        return error.XShmAttachFailed;
     }
 
     const gc = xlib.XCreateGC(
@@ -169,49 +158,40 @@ fn createShmRenderer(allocator: std.mem.Allocator, win: *Window) !SoftwareRender
         .gc = gc,
         .width = width,
         .height = height,
-        .front = 0,
-        .shm_infos = shm_infos,
-        .buffers = undefined,
-        .ximages = ximages,
+        .shm_info = shm_info,
+        .buffer = &.{},
+        .ximage = ximage,
     };
 }
 
 fn presentShm(win: *Window, renderer: *SoftwareRenderer) void {
-    // const back = 1 - renderer.front;
-    const back = 0;
     _ = xlib.XShmPutImage(
         win.display, 
         win.window,
         renderer.gc,
-        renderer.ximages[0],
+        renderer.ximage,
         0, 0,
         0, 0,
         renderer.width,
         renderer.height,
         xlib.False
         );
-    renderer.front = back;
 }
 
 
 fn destroyShm(allocator: std.mem.Allocator, win: *Window, renderer: *SoftwareRenderer) void {
-    var i: usize = 0;
-    while (i < 2) : (i += 1) {
-        _ = xlib.XShmDetach(
-            win.display,
-            &renderer.shm_infos.*[i]
-        );
-    }
-    // _ = xlib.XSync(win.display, xlib.False);
+    _ = xlib.XShmDetach(
+        win.display,
+        &renderer.shm_info.*,
+    );
 
-    i = 0;
-    while (i < 2) : (i += 1) {
-        renderer.ximages[i].*.data = null;
-        _ = renderer.ximages[i].*.f.destroy_image.?(renderer.ximages[i]);
-        _ = sys.syscall1(.shmdt, @intFromPtr(renderer.shm_infos.*[i].shmaddr));
-        _ = sys.syscall3(.shmctl, @intCast(renderer.shm_infos.*[i].shmid), IPC_RMID, 0);
-    }
-    allocator.destroy(renderer.shm_infos);
+    _ = xlib.XSync(win.display, xlib.False);
+
+    renderer.ximage.*.data = null;
+    _ = renderer.ximage.*.f.destroy_image.?(renderer.ximage);
+    _ = sys.syscall1(.shmdt, @intFromPtr(renderer.shm_info.*.shmaddr));
+    _ = sys.syscall3(.shmctl, @intCast(renderer.shm_info.*.shmid), IPC_RMID, 0);
+    allocator.destroy(renderer.shm_info);
     _ = xlib.XFreeGC(win.display, renderer.gc);
 }
 
@@ -222,39 +202,32 @@ fn createPlainRenderer(allocator: std.mem.Allocator, win: *Window) !SoftwareRend
     const height = win.height;
     const bytes_per_pixel = 4;
 
-    var buffers: [2][]u8 = undefined;
-    var ximages: [2]*xlib.XImage = undefined;
+    var buffer: []u8 = undefined;
+    var ximage: *xlib.XImage = undefined;
 
     const visual = xlib.DefaultVisual(win.display, win.screen);
     const depth = xlib.DefaultDepth(win.display, win.screen);
 
-    var i: usize = 0;
     errdefer {
-        var j: usize = 0;
-        while (j < i) : (j += 1) {
-            ximages[j].*.data = null;
-            _ = ximages[j].*.f.destroy_image.?(ximages[j]);
-            allocator.free(buffers[j]);
-        }
+        ximage.*.data = null;
+        _ = ximage.*.f.destroy_image.?(ximage);
+        allocator.free(buffer);
     }
-    while (i < 2) : (i += 1) {
-        const buffer = try allocator.alloc(u8, width * height * bytes_per_pixel);
-        buffers[i] = buffer;
 
-        const ximage = xlib.XCreateImage(
-            win.display, 
-            visual, 
-            @intCast(depth), 
-            xlib.ZPixmap, 
-            0, 
-            @ptrCast(buffer.ptr), 
-            width, 
-            height, 
-            32, 
-            @intCast(width * bytes_per_pixel),
-        ) orelse return error.XCreateImageFailed;
-        ximages[i] = ximage;
-    }
+    buffer = try allocator.alloc(u8, width * height * bytes_per_pixel);
+
+    ximage = xlib.XCreateImage(
+        win.display, 
+        visual, 
+        @intCast(depth), 
+        xlib.ZPixmap, 
+        0, 
+        @ptrCast(buffer.ptr), 
+        width, 
+        height, 
+        32, 
+        @intCast(width * bytes_per_pixel),
+    ) orelse return error.XCreateImageFailed;
 
 
     const gc = xlib.XCreateGC(win.display, win.window, 0, null);
@@ -265,36 +238,29 @@ fn createPlainRenderer(allocator: std.mem.Allocator, win: *Window) !SoftwareRend
         .gc = gc,
         .width = width,
         .height = height,
-        .front = 0,
-        .shm_infos = undefined,
-        .buffers = buffers,
-        .ximages = ximages,
+        .shm_info = undefined,
+        .buffer = buffer,
+        .ximage = ximage,
     };
 }
 
 fn presentPlain(win: *Window, renderer: *SoftwareRenderer) void {
-    // const back = 1 - renderer.front;
-    const back = 0;
     _ = xlib.XPutImage(
         win.display, 
         win.window, 
         renderer.gc, 
-        renderer.ximages[0], 
+        renderer.ximage, 
         0, 0, 
         0, 0, 
         renderer.width, 
         renderer.height,
     );
-    renderer.front = back;
 }
 
 fn destroyPlain(allocator: std.mem.Allocator, win: *Window, renderer: *SoftwareRenderer) void {
-    var i: usize = 0;
-    while (i < 2) : (i += 1) {
-        renderer.ximages[i].*.data = null;
-        _ = renderer.ximages[i].*.f.destroy_image.?(renderer.ximages[i]);
-        allocator.free(renderer.buffers[i]);
-    }
+    renderer.ximage.*.data = null;
+    _ = renderer.ximage.*.f.destroy_image.?(renderer.ximage);
+    allocator.free(renderer.buffer);
     _ = xlib.XFreeGC(win.display, renderer.gc);
 }
 
@@ -304,12 +270,10 @@ pub fn getCanvas(allocator: std.mem.Allocator, renderer: *SoftwareRenderer) !Can
     if (renderer.width != renderer.win.width or renderer.height != renderer.win.height) {
         try resize(allocator, renderer.win, renderer);
     }
-    // const back = 1 - renderer.front;
-    // const back = 0;
     const pixels = if (renderer.use_shm)
-        @as([*]u8, @ptrCast(renderer.ximages[0].*.data.?))[0 .. renderer.width * renderer.height * 4]
+        @as([*]u8, @ptrCast(renderer.ximage.*.data.?))[0 .. renderer.width * renderer.height * 4]
     else
-        renderer.buffers[0];
+        renderer.buffer;
 
     return .{
         .pixels = pixels,

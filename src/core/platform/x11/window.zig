@@ -56,11 +56,12 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
         xlib.PointerMotionMask |
         xlib.FocusChangeMask;
 
+    const origin = getPrimaryMonitorOrigin(display, xlib.RootWindow(display, screen));
     const window: xlib.Window = xlib.XCreateWindow(
         display,
         xlib.RootWindow(display, screen),
-        1920,
-        0,
+        origin.x,
+        origin.y,
         @intCast(width),
         @intCast(height),
         0,
@@ -77,10 +78,9 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
 
     // FIXME: possibly allow user to define window location, or make it so the window is placed at screen
     //        center based on screen resolution?
-    const origin = getPrimaryMonitorOrigin(display, xlib.RootWindow(display, screen));
     sizehints.flags |= xlib.USPosition;
-    sizehints.x = origin.x + 10;
-    sizehints.y = origin.y + 10;
+    sizehints.x = origin.x;
+    sizehints.y = origin.y;
 
     // FIXME: Add more checks throughout to enable/disable min and max size
     if (flags.resizable == false and flags.fullscreen == false) {
@@ -247,7 +247,7 @@ fn applyFullscreen(io: std.Io, display: *xlib.Display, window: xlib.Window, scre
             var i: usize = 0;
             while (i < nitems) : (i += 1) {
                 if (prop[i] == fullscreen_atom) {
-                    setBypassCompositor(display, window, true);
+                    // setBypassCompositor(display, window, true);
                     return;
                     // confirmed — done
                 } 
@@ -278,7 +278,7 @@ pub fn toggleFullscreen(io: std.Io, win: *Window) !void {
     );
 
     win.fullscreen = !win.fullscreen;
-    setBypassCompositor(win.display, win.window, win.fullscreen);
+    // setBypassCompositor(win.display, win.window, win.fullscreen);
 }
 
 pub fn sync(win: *Window) void {
