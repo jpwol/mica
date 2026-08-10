@@ -1,6 +1,6 @@
-# Mica
+# mica
 
-Mica (Multimedia Interface & Context API) is a cross-platform library for creating and handling window contexts and events, as well as rendering/rasterization.
+**mica** (Multimedia Interface & Context API) is a cross-platform library for creating and handling window contexts and events, as well as rendering/rasterization.
 
 ## Features (Implemented & Planned)
 
@@ -43,3 +43,9 @@ Mica (Multimedia Interface & Context API) is a cross-platform library for creati
 - [ ] X11
 - [ ] Wayland
 - [ ] Win32
+
+---
+
+Copyright 2026 Joshua Wolfe
+
+mica is licensed under the Apache License, Version 2.0.
