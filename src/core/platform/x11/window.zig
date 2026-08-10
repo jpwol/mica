@@ -23,6 +23,8 @@ pub const Window = struct {
     key_down_time: [std.meta.fields(Key).len]?i64,
     modifiers: Modifiers,
     events: std.ArrayList(Event),
+    cursor: ?xlib.Cursor,
+
     width: u32,
     height: u32,
 };
@@ -37,6 +39,8 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
     win.events = try .initCapacity(allocator, 0);
     win.key_down_time = [_]?i64{null} ** std.meta.fields(Key).len;
     win.modifiers = .{};
+
+    win.cursor = null;
 
     const display: *xlib.Display = xlib.XOpenDisplay(null).?;
     var supported: xlib.Bool = undefined;
@@ -329,6 +333,9 @@ pub fn close(win: *Window) void {
 }
 
 pub fn destroyWindow(allocator: std.mem.Allocator, win: *Window) void {
+    if (win.cursor) |c| {
+        _ = xlib.XFreeCursor(win.display, c);
+    }
     _ = xlib.XDestroyWindow(win.display, win.window);
     win.events.deinit(allocator);
     allocator.destroy(win);
@@ -365,4 +372,41 @@ fn getPrimaryMonitorOrigin(display: *xlib.Display, root: xlib.Window) struct {x:
     }
 
     return .{ .x = 0, .y = 0 };
+}
+
+pub fn hideCursor(win: *Window) void {
+    if (win.cursor) |c| {
+        _ = xlib.XDefineCursor(win.display, win.window, c);
+    } else {
+        const empty_data = [_]u8{0};
+
+        const bitmap = xlib.XCreateBitmapFromData(
+            win.display,
+            win.window,
+            &empty_data,
+            1,
+            1
+        );
+
+        var fg = xlib.XColor{};
+        var bg = xlib.XColor{};
+
+        const cursor = xlib.XCreatePixmapCursor(
+            win.display,
+            bitmap,
+            bitmap,
+            &fg,
+            &bg,
+            0,
+            0,
+        );
+
+        _ = xlib.XDefineCursor(win.display, win.window, cursor);
+        _ = xlib.XFreePixmap(win.display, bitmap);
+        win.cursor = cursor;
+    }
+}
+
+pub fn showCursor(win: *Window) void {
+    _ = xlib.XUndefineCursor(win.display, win.window);
 }

@@ -70,6 +70,16 @@ pub fn toggleFullscreen(self: *Mica, win: *Window) !void {
     try backend.toggleFullscreen(self.io, win);
 }
 
+pub fn hideCursor(self: *Mica, win: *Window) void {
+    _ = self;
+    backend.hideCursor(win);
+}
+
+pub fn showCursor(self: *Mica, win: *Window) void {
+    _ = self;
+    backend.showCursor(win);
+}
+
 pub fn pollEvents(self: *Mica, win: *Window) ![]const Event {
     return event_handler.pollEvents(self.io, self.allocator, win);
 }
