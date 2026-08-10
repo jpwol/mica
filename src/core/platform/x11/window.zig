@@ -1,5 +1,5 @@
 const std = @import("std");
-const xlib = @import("xlib");
+const xlib = @import("c");
 const TS = std.Io.Timestamp;
 const Key = @import("event.zig").Key;
 const Modifiers = @import("event.zig").Modifiers;

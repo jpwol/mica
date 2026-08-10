@@ -1,17 +1,35 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const translate_c = b.addTranslateC(.{
-        .root_source_file = b.path("include/c.h"),
-        .target = target,
-        .optimize = optimize,
-    });
-    translate_c.linkSystemLibrary("X11", .{});
-    translate_c.linkSystemLibrary("Xrandr", .{});
-    translate_c.linkSystemLibrary("Xext", .{});
+    const translate_c = switch(builtin.os.tag) {
+        .linux => b.addTranslateC(.{
+            .root_source_file = b.path("include/linux.h"),
+            .target = target,
+            .optimize = optimize,
+        }),
+        .windows => b.addTranslateC(.{
+            .root_source_file = b.path("include/windows.h"),
+            .target = target,
+            .optimize = optimize,
+        }),
+        else => @compileError("mica: unsupported platform"),
+    };
+
+    switch (builtin.os.tag) {
+        .linux => {
+            translate_c.linkSystemLibrary("X11", .{});
+            translate_c.linkSystemLibrary("Xrandr", .{});
+            translate_c.linkSystemLibrary("Xext", .{});
+        },
+        .windows => {
+
+        },
+        else => @compileError("mica: unsupported platform"),
+    }
 
     const mod = b.addModule("mica", .{
         .root_source_file = b.path("src/mica.zig"),
@@ -20,7 +38,7 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
         .imports = &.{
             .{
-                .name = "xlib",
+                .name = "c",
                 .module = translate_c.createModule(),
             },
         },

@@ -1,6 +1,5 @@
 const std = @import("std");
 const Window = @import("../core/platform/x11/window.zig").Window;
-const xlib = @import("xlib");
 
 pub const Canvas = @This();
 

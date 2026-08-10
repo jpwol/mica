@@ -1,5 +1,5 @@
 const std = @import("std");
-const xlib = @import("xlib");
+const xlib = @import("c");
 const sys = std.os.linux;
 
 const Canvas = @import("../../../render/software.zig");
