@@ -12,19 +12,19 @@
 
 // WinUser.h
 
-pub const IDC_ARROW           = @as(?[*:0]const u16, @ptrFromInt(32512));
-pub const IDC_IBEAM           = @as(?[*:0]const u16, @ptrFromInt(32513));
-pub const IDC_WAIT            = @as(?[*:0]const u16, @ptrFromInt(32514));
-pub const IDC_CROSS           = @as(?[*:0]const u16, @ptrFromInt(32515));
-pub const IDC_UPARROW         = @as(?[*:0]const u16, @ptrFromInt(32516));
-pub const IDC_SIZE            = @as(?[*:0]const u16, @ptrFromInt(32640));
-pub const IDC_ICON            = @as(?[*:0]const u16, @ptrFromInt(32641));
-pub const IDC_SIZENWSE        = @as(?[*:0]const u16, @ptrFromInt(32642));
-pub const IDC_SIZENESW        = @as(?[*:0]const u16, @ptrFromInt(32643));
-pub const IDC_SIZEWE          = @as(?[*:0]const u16, @ptrFromInt(32644));
-pub const IDC_SIZENS          = @as(?[*:0]const u16, @ptrFromInt(32645));
-pub const IDC_SIZEALL         = @as(?[*:0]const u16, @ptrFromInt(32646));
-pub const IDC_NO              = @as(?[*:0]const u16, @ptrFromInt(32648));
-pub const IDC_HAND            = @as(?[*:0]const u16, @ptrFromInt(32649));
-pub const IDC_APPSTARTING     = @as(?[*:0]const u16, @ptrFromInt(32650));
-pub const IDC_HELP            = @as(?[*:0]const u16, @ptrFromInt(32651));
+pub const IDC_ARROW       : ?[*:0]align(1) const u16 = @ptrFromInt(32512);
+pub const IDC_IBEAM       : ?[*:0]align(1) const u16 = @ptrFromInt(32513);
+pub const IDC_WAIT        : ?[*:0]align(1) const u16 = @ptrFromInt(32514);
+pub const IDC_CROSS       : ?[*:0]align(1) const u16 = @ptrFromInt(32515);
+pub const IDC_UPARROW     : ?[*:0]align(1) const u16 = @ptrFromInt(32516);
+pub const IDC_SIZE        : ?[*:0]align(1) const u16 = @ptrFromInt(32640);
+pub const IDC_ICON        : ?[*:0]align(1) const u16 = @ptrFromInt(32641);
+pub const IDC_SIZENWSE    : ?[*:0]align(1) const u16 = @ptrFromInt(32642);
+pub const IDC_SIZENESW    : ?[*:0]align(1) const u16 = @ptrFromInt(32643);
+pub const IDC_SIZEWE      : ?[*:0]align(1) const u16 = @ptrFromInt(32644);
+pub const IDC_SIZENS      : ?[*:0]align(1) const u16 = @ptrFromInt(32645);
+pub const IDC_SIZEALL     : ?[*:0]align(1) const u16 = @ptrFromInt(32646);
+pub const IDC_NO          : ?[*:0]align(1) const u16 = @ptrFromInt(32648);
+pub const IDC_HAND        : ?[*:0]align(1) const u16 = @ptrFromInt(32649);
+pub const IDC_APPSTARTING : ?[*:0]align(1) const u16 = @ptrFromInt(32650);
+pub const IDC_HELP        : ?[*:0]align(1) const u16 = @ptrFromInt(32651);
