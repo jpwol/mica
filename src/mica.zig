@@ -11,6 +11,7 @@ const backend = switch (builtin.target.os.tag) {
 
 const event_handler = switch (builtin.target.os.tag) {
     .linux => @import("core/platform/x11/event.zig"),
+    .windows => @import("core/platform/windows/event.zig"),
     else => @compileError("mica: unsupported platform"),
 };
 
@@ -25,10 +26,12 @@ io: std.Io,
 pub const Window = backend.Window;
 pub const WindowFlags = backend.WindowFlags;
 
-pub const Key = event_handler.Key;
-pub const Event = event_handler.Event;
-pub const Modifiers =  event_handler.Modifiers;
-pub const MouseButton = event_handler.MouseButton;
+const e = @import("core/events.zig");
+
+pub const Key = e.Key;
+pub const Event = e.Event;
+pub const Modifiers =  e.Modifiers;
+pub const MouseButton = e.MouseButton;
 
 pub const render = @import("render/software.zig");
 pub const Canvas = render.Canvas;
