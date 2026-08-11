@@ -1,5 +1,5 @@
 const std = @import("std");
-const xlib = @import("xlib");
+const xlib = @import("c");
 const Win = @import("window.zig");
 const TS = std.Io.Timestamp;
 
