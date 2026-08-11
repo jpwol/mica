@@ -2,6 +2,9 @@ const std = @import("std");
 const w = @import("../../../WIN32.zig");
 const win32 = @import("c");
 const e = @import("../../events.zig");
+const Key = e.Key;
+const Event = e.Event;
+const Modifiers = e.Modifiers;
 
 const windowProc = @import("event.zig").windowProc;
 
@@ -16,13 +19,13 @@ pub const Window = struct {
     height: u32,
 
     should_close: bool = false,
-    events: std.ArrayList(e.Event),
+    events: std.ArrayList(Event),
     title: []u16,
-    key_held: [std.meta.fields(e.Key).len]bool,
-    key_pressed_this_frame: [std.meta.fields(e.Key).len]bool,
-    key_released_this_frame: [std.meta.fields(e.Key).len]bool,
-    key_down_time: [std.meta.fields(e.Key).len]?i64,
-    modifiers: e.Modifiers,
+    key_held: [std.meta.fields(Key).len]bool,
+    key_pressed_this_frame: [std.meta.fields(Key).len]bool,
+    key_released_this_frame: [std.meta.fields(Key).len]bool,
+    key_down_time: [std.meta.fields(Key).len]?i64,
+    modifiers: Modifiers,
 
     allocator: std.mem.Allocator,
     io: std.Io,
@@ -33,10 +36,10 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
 
     // initialize struct members
     win.events = try .initCapacity(allocator, 0);
-    win.key_held = [_]bool{false} ** std.meta.fields(e.Key).len;
-    win.key_pressed_this_frame = [_]bool{false} ** std.meta.fields(e.Key).len;
-    win.key_released_this_frame = [_]bool{false} ** std.meta.fields(e.Key).len;
-    win.key_down_time = [_]?i64{null} ** std.meta.fields(e.Key).len;
+    win.key_held = [_]bool{false} ** std.meta.fields(Key).len;
+    win.key_pressed_this_frame = [_]bool{false} ** std.meta.fields(Key).len;
+    win.key_released_this_frame = [_]bool{false} ** std.meta.fields(Key).len;
+    win.key_down_time = [_]?i64{null} ** std.meta.fields(Key).len;
     win.modifiers = .{};
     win.allocator = allocator;
     win.io = io;

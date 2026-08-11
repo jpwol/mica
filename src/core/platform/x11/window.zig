@@ -1,9 +1,10 @@
 const std = @import("std");
 const xlib = @import("c");
 const TS = std.Io.Timestamp;
-const Key = @import("event.zig").Key;
-const Modifiers = @import("event.zig").Modifiers;
-const Event = @import("event.zig").Event;
+const e = @import("../../events.zig");
+const Key = e.Key;
+const Event = e.Event;
+const Modifiers = e.Modifiers;
 
 pub const WindowFlags = packed struct {
     resizable: bool = false,
