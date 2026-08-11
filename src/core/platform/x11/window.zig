@@ -16,7 +16,7 @@ pub const Window = struct {
     screen: c_int,
     wm_delete_window: xlib.Atom,
     fullscreen: bool,
-    should_close: bool,
+    should_close: bool = false,
     key_held: [std.meta.fields(Key).len]bool,
     key_pressed_this_frame: [std.meta.fields(Key).len]bool,
     key_released_this_frame: [std.meta.fields(Key).len]bool,
@@ -35,8 +35,10 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
     win.width = width;
     win.height = height;
 
-    win.key_held = [_]bool{false} ** std.meta.fields(Key).len;
     win.events = try .initCapacity(allocator, 0);
+    win.key_held = [_]bool{false} ** std.meta.fields(Key).len;
+    win.key_pressed_this_frame = [_]bool{false} ** std.meta.fields(Key).len;
+    win.key_released_this_frame = [_]bool{false} ** std.meta.fields(Key).len;
     win.key_down_time = [_]?i64{null} ** std.meta.fields(Key).len;
     win.modifiers = .{};
 
