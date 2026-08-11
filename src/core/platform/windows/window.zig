@@ -1,53 +1,88 @@
 const std = @import("std");
 const w = @import("../../../WIN32.zig");
 const win32 = @import("c");
+const e = @import("../../events.zig");
+
+const windowProc = @import("event.zig").windowProc;
 
 pub const WindowFlags = packed struct {
     resizable: bool = false,
 };
 
 pub const Window = struct {
-    hinstance: win32.HINSTANCE,
-    window: win32.HWND,
+    hinstance: w.HINSTANCE,
+    window: w.HWND,
+    width: u32,
+    height: u32,
+
+    should_close: bool = false,
+    events: std.ArrayList(e.Event),
+    title: []u16,
+    key_held: [std.meta.fields(e.Key).len]bool,
+    key_pressed_this_frame: [std.meta.fields(e.Key).len]bool,
+    key_released_this_frame: [std.meta.fields(e.Key).len]bool,
+    key_down_time: [std.meta.fields(e.Key).len]?i64,
+    modifiers: e.Modifiers,
+
+    allocator: std.mem.Allocator,
+    io: std.Io,
 };
 
 pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8, width: u32, height: u32, flags: WindowFlags) !*Window {
-    _ = io;
-
     var win: *Window = try allocator.create(Window); 
 
-    const hinstance = win32.GetModuleHandleW(null);
+    // initialize struct members
+    win.events = try .initCapacity(allocator, 0);
+    win.key_held = [_]bool{false} ** std.meta.fields(e.Key).len;
+    win.key_pressed_this_frame = [_]bool{false} ** std.meta.fields(e.Key).len;
+    win.key_released_this_frame = [_]bool{false} ** std.meta.fields(e.Key).len;
+    win.key_down_time = [_]?i64{null} ** std.meta.fields(e.Key).len;
+    win.modifiers = .{};
+    win.allocator = allocator;
+    win.io = io;
+    win.width = width;
+    win.height = height;
+    // win.window = null;
+
+    const hinstance = w.GetModuleHandleW(null) orelse @panic("could not get module handle!");
+
     const class_name = std.unicode.utf8ToUtf16LeStringLiteral("MicaWindow");
     const w_title = try std.unicode.utf8ToUtf16LeAlloc(allocator, title);
-    var ex_style: win32.DWORD = 0;
+    var ex_style: w.DWORD = 0;
     if (false) {
         ex_style = 1;
     }
 
-    var wc: win32.WNDCLASSEXW = .{
-        .cbSize = @sizeOf(win32.WNDCLASSEXW),
+    var wc: w.WNDCLASSEXW = .{
+        .cbSize = @sizeOf(w.WNDCLASSEXW),
         .style = 0,
         .lpfnWndProc = windowProc,
         .cbClsExtra = 0,
         .cbWndExtra = 0,
         .hInstance = hinstance,
         .hIcon = null,
-        .hCursor = win32.LoadCursorW(null, @ptrCast(@alignCast(w.IDC_ARROW))),
+        .hCursor = w.LoadCursorW(null, @ptrCast(@alignCast(w.IDC_ARROW))),
         .hbrBackground = null,
         .lpszMenuName = null,
         .lpszClassName = class_name,
         .hIconSm = null,
     };
 
-    _ = win32.RegisterClassExW(&wc);
-
-    const style: win32.DWORD = win32.WS_OVERLAPPEDWINDOW;
-    if (!flags.resizable) {
-        // style &= ~win32.WS_THICKFRAME;
-        // style &= ~win32.WS_MAXIMIZEBOX;
+    const class_atom = w.RegisterClassExW(&wc);
+    if (class_atom == 0) {
+        std.debug.print("RegisterClassExW failed: {}\n", .{w.GetLastError()});
     }
 
-    const hwnd = win32.CreateWindowExW(
+    var style: w.DWORD = w.WS_OVERLAPPEDWINDOW;
+    if (!flags.resizable) {
+        style &= ~w.WS_THICKFRAME;
+        style &= ~w.WS_MAXIMIZEBOX;
+    }
+
+    win.hinstance = hinstance;
+    // win.window = null;
+    win.title = w_title;
+    const hwnd = w.CreateWindowExW(
         ex_style, 
         class_name, 
         @ptrCast(w_title), 
@@ -58,35 +93,33 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
         null, 
         hinstance, 
         @ptrCast(win),
-    );
+    ) orelse { 
+        std.debug.print("CreateWindowExW failed: {}\n", .{w.GetLastError()});
+        return error.CreateWindowFailed; 
+    };
     
-    if (hwnd == null) {
-        // TODO: Implement global error tracking
-        return error.CreateWindowFailed;
-    }
+    // if (hwnd == null) {
+    //     // TODO: Implement global error tracking
+    //     return error.CreateWindowFailed;
+    // }
 
-    _ = win32.ShowWindow(hwnd, win32.SW_SHOW);
-
-    win.hinstance = hinstance;
     win.window = hwnd;
 
-    return win;
+    _ = w.ShowWindow(hwnd, w.SW_SHOW);
 
+    return win;
 }
 
-fn windowProc(
-    hwnd: win32.HWND,
-    msg: u32,
-    wparam: win32.WPARAM,
-    lparam: win32.LPARAM
-    ) callconv(.winapi) win32.LRESULT {
-   switch (msg) {
-       win32.WM_DESTROY => {
-           win32.PostQuitMessage(0);
-           return 0;
-       },
-       else => {
-           return win32.DefWindowProcW(hwnd, msg, wparam, lparam);
-       },
-   }
+
+pub fn windowShouldClose(win: *Window) bool {
+    return win.should_close;
+}
+pub fn close(win: *Window) void {
+    win.should_close = true;
+}
+
+pub fn destroyWindow(allocator: std.mem.Allocator, win: *Window) void {
+    win.events.deinit(allocator);  
+    allocator.free(win.title);
+    allocator.destroy(win);
 }
