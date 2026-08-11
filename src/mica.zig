@@ -5,7 +5,7 @@ const Mica = @This();
 
 const backend = switch (builtin.target.os.tag) {
     .linux => @import("core/platform/x11/window.zig"),
-    .windows => @import("core/platform/windows/win32.zig"),
+    .windows => @import("core/platform/windows/window.zig"),
     else => @compileError("mica: unsupported platform"),
 };
 
