@@ -24,8 +24,9 @@ pub const HICON = *opaque{};
 pub const HCURSOR = *opaque{};
 pub const HBRUSH = *opaque{};
 pub const HMENU = *opaque{};
-pub const ATOM = c_ushort;
+pub const ATOM = u16;
 pub const LPVOID = *anyopaque;
+pub const LONG = i32;
 // FIXME: update to convert to boolean maybe?
 pub const WINBOOL = c_int;
 
@@ -41,6 +42,40 @@ pub const WINDOW_LONG_PTR_INDEX = enum(i32) {
 
 pub const MAPVK_VSC_TO_VK_EX: u32 = 3;
 
+pub const PM_REMOVE: i32 = 0x0001;
+
+pub const WM_NCCREATE    : i32 = 0x0081;
+pub const WM_QUIT        : i32 = 0x0012;
+pub const WM_KEYDOWN     : i32 =  0x0100;
+pub const WM_SYSKEYDOWN  : i32 = 0x0104;
+pub const WM_KEYUP       : i32 = 0x0101;
+pub const WM_SYSKEYUP    : i32 = 0x0105;
+pub const WM_MOUSEMOVE   : i32 = 0x0200;
+pub const WM_LBUTTONDOWN : i32 = 0x0201;
+pub const WM_LBUTTONUP   : i32 = 0x0202;
+pub const WM_RBUTTONDOWN : i32 = 0x0204;
+pub const WM_RBUTTONUP   : i32 = 0x0205;
+pub const WM_MBUTTONDOWN : i32 = 0x0207;
+pub const WM_MBUTTONUP   : i32 = 0x0208;
+pub const WM_MOUSEWHEEL  : i32 = 0x020A;
+pub const WM_SIZE        : i32 = 0x0005;
+pub const WM_CLOSE       : i32 = 0x0010;
+pub const WM_DESTROY     : i32 = 0x0002;
+
+pub const POINT = extern struct {
+    x: LONG = 0,
+    y: LONG = 0,
+};
+
+pub const MSG = extern struct {
+    hwnd: ?HWND = null,
+    message: UINT = 0,
+    wParam: WPARAM = 0,
+    lParam: LPARAM = 0,
+    time: DWORD = 0,
+    pt: POINT = .{ .x = 0, .y = 0 },
+};
+
 pub const WNDCLASSEXW = extern struct {
     cbSize: UINT,
     style: UINT,
@@ -54,6 +89,21 @@ pub const WNDCLASSEXW = extern struct {
     lpszMenuName: LPCWSTR,
     lpszClassName: LPCWSTR,
     hIconSm: ?HICON,
+};
+
+pub const CREATESTRUCTW = extern struct {
+    lpCreateParams: ?LPVOID = null,
+    hInstance: ?HINSTANCE = null,
+    hMenu: ?HMENU = null,
+    hwndParent: ?HWND = null,
+    cy: i32 = 0,
+    cx: i32 = 0,
+    y: i32 = 0,
+    x: i32 = 0,
+    style: LONG = 0,
+    lpszName: LPCWSTR = null,
+    lpszClass: LPCWSTR = null,
+    dwExStyle: DWORD = 0,
 };
 
 pub const BITMAPINFOHEADER = extern struct {
@@ -286,6 +336,18 @@ pub extern "user32" fn ShowWindow(
     nCmdShow: i32
 ) callconv(.winapi) WINBOOL;
 
+pub extern "user32" fn PeekMessageW(
+    lpMsg: ?*MSG,
+    hWnd: ?HWND,
+    wMsgFilterMin: UINT,
+    wMsgFilterMax: UINT,
+    wRemoveMsg: UINT
+) callconv(.winapi) WINBOOL;
+
+pub extern "user32" fn TranslateMessage(lpMsg: ?*MSG) callconv(.winapi) WINBOOL;
+pub extern "user32" fn DispatchMessageW(lpMsg: ?*MSG) callconv(.winapi) LRESULT;
+
+pub extern "user32" fn PostQuitMessage(nExitCode: i32) callconv(.winapi) void;
 pub extern "kernel32" fn GetLastError() callconv(.winapi) DWORD;
 
 pub extern "user32" fn MapVirtualKeyW(
@@ -332,4 +394,4 @@ pub extern "gdi32" fn BitBlt(
     x1: i32,
     y1: i32,
     rop: u32,
-) callconv(.winapi) ?HBITMAP;
+) callconv(.winapi) WINBOOL;

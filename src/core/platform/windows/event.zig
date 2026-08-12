@@ -1,6 +1,6 @@
 const std = @import("std");
 const w = @import("../../../WIN32.zig");
-const win32 = @import("c");
+// const win32 = @import("c");
 const TS = std.Io.Timestamp;
 const Window = @import("window.zig").Window;
 const e = @import("../../events.zig");
@@ -16,22 +16,22 @@ pub fn pollEvents(io: std.Io, allocator: std.mem.Allocator, win: *Window) ![]con
     @memset(&win.key_released_this_frame, false);
     win.events.clearRetainingCapacity();
 
-    var msg: win32.MSG = undefined;
-    while (win32.PeekMessageW(
+    var msg: w.MSG = undefined;
+    while (w.PeekMessageW(
             &msg, 
             null, 
             0, 0, 
-            win32.PM_REMOVE,
+            w.PM_REMOVE,
         ) != 0) {
 
-        if (msg.message == win32.WM_QUIT) {
+        if (msg.message == w.WM_QUIT) {
             win.should_close = true;
             try win.events.append(allocator, .close_requested);
             break;
         }
 
-        _ = win32.TranslateMessage(&msg);
-        _ = win32.DispatchMessageW(&msg);
+        _ = w.TranslateMessage(&msg);
+        _ = w.DispatchMessageW(&msg);
     }
 
     return win.events.items;
@@ -43,8 +43,8 @@ pub fn windowProc(
     wparam: w.WPARAM,
     lparam: w.LPARAM
     ) callconv(.winapi) w.LRESULT {
-    if (msg == win32.WM_NCCREATE) {
-        const create_struct: *win32.CREATESTRUCTW = @ptrFromInt(@as(usize, @intCast(lparam)));
+    if (msg == w.WM_NCCREATE) {
+        const create_struct: *w.CREATESTRUCTW = @ptrFromInt(@as(usize, @intCast(lparam)));
         const win_ptr: *Window = @ptrCast(@alignCast(create_struct.lpCreateParams));
         _ = w.SetWindowLongPtrW(hwnd, .P_USERDATA, @intCast(@intFromPtr(win_ptr)));
         return w.DefWindowProcW(hwnd, msg, wparam, lparam);
@@ -57,7 +57,7 @@ pub fn windowProc(
     const win: *Window = @ptrFromInt(@as(usize, @intCast(user_data)));
 
     switch (msg) {
-        win32.WM_KEYDOWN, win32.WM_SYSKEYDOWN => {
+        w.WM_KEYDOWN, w.WM_SYSKEYDOWN => {
             const key = vkToKey(wparam, lparam);
             const idx = @intFromEnum(key);
             const is_repeat = win.key_held[idx];
@@ -75,7 +75,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_KEYUP, win32.WM_SYSKEYUP => {
+        w.WM_KEYUP, w.WM_SYSKEYUP => {
             const key = vkToKey(wparam, lparam);
             const idx = @intFromEnum(key);
             win.key_held[idx] = false;
@@ -89,7 +89,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_MOUSEMOVE => {
+        w.WM_MOUSEMOVE => {
             const x = w.getXLparam(lparam);
             const y = w.getYLparam(lparam);
             win.events.append(win.allocator, .{
@@ -100,7 +100,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_LBUTTONDOWN => {
+        w.WM_LBUTTONDOWN => {
             win.events.append(win.allocator, .{ 
                 .mouse_button_down = .{ 
                     .button = .left,
@@ -111,7 +111,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_LBUTTONUP => {
+        w.WM_LBUTTONUP => {
             win.events.append(win.allocator, .{
                 .mouse_button_up = .{
                     .button = .left,
@@ -122,7 +122,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_RBUTTONDOWN => {
+        w.WM_RBUTTONDOWN => {
             win.events.append(win.allocator, .{ 
                 .mouse_button_down = .{ 
                     .button = .right,
@@ -133,7 +133,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_RBUTTONUP => {
+        w.WM_RBUTTONUP => {
             win.events.append(win.allocator, .{
                 .mouse_button_up = .{
                     .button = .right,
@@ -144,7 +144,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_MBUTTONDOWN => {
+        w.WM_MBUTTONDOWN => {
             win.events.append(win.allocator, .{ 
                 .mouse_button_down = .{ 
                     .button = .middle,
@@ -155,7 +155,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_MBUTTONUP => {
+        w.WM_MBUTTONUP => {
             win.events.append(win.allocator, .{
                 .mouse_button_up = .{
                     .button = .middle,
@@ -166,7 +166,7 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_MOUSEWHEEL => {
+        w.WM_MOUSEWHEEL => {
             const delta = w.getWheelDelta(wparam);
             const button: MouseButton = if (delta > 0) .scroll_up else .scroll_down; 
             win.events.append(win.allocator, .{
@@ -179,19 +179,19 @@ pub fn windowProc(
             }) catch {};
             return 0;
         },
-        win32.WM_SIZE => {
+        w.WM_SIZE => {
             win.width = @intCast(lparam & 0xFFFF);
             win.height = @intCast((lparam >> 16) & 0xFFFF);
             win.events.append(win.allocator, .{ .resize = .{ .width = win.width, .height = win.height } }) catch {};
             return 0;
         },
-        win32.WM_CLOSE => {
+        w.WM_CLOSE => {
             win.should_close = true;
             win.events.append(win.allocator, .close_requested) catch {};
             return 0;
         },
-        win32.WM_DESTROY => {
-            win32.PostQuitMessage(0);
+        w.WM_DESTROY => {
+            w.PostQuitMessage(0);
             return 0;
         },
         else => {
