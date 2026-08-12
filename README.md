@@ -59,15 +59,19 @@ After installing **mica** and setting up your build file, mica can be used as fo
 const std = @import("std");
 const Mica = @import("mica");
 
+
 pub fn main(init: std.process.Init) !void {
     var mica = Mica.init(init.io, init.gpa);
 
     const window = try mica.createWindow("title", width, height, .{});
     defer mica.destroyWindow(window);
 
-    // currently x11 exclusive, create a software renderer for CPU rasterization
-    const sr = try mica.createSoftwareRenderer(win);
+    var sr = try mica.createSoftwareRenderer(win);
     defer mica.destroySoftwareRenderer(win, &sr);
+
+    // you can define colors for reuse
+    // or define them inline
+    const RED = Mica.Color{ .r = 255, .g = 0, .b = 0 };
 
     while(!mica.windowShouldClose(win)) {
         // pollEvents polls inline and returns an array of events
@@ -109,13 +113,16 @@ pub fn main(init: std.process.Init) !void {
 
         canvas.fillRect(200, 200, 30, 30, .{ .r = 255, .g = 0, .b = 0 });
 
+        // using a user-defined color
+        canvas.setPixel(25, 39, RED);
+
         mica.present(win, &sr);
     }
 }
 ```
 
 > [!NOTE]
-> The implementation of the `Canvas` object and `SoftwareRenderer` are going to change, and are currently X11 exclusive.
+> The implementation of the `Canvas` object and `SoftwareRenderer` are going to change
 
 ---
 
