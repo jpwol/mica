@@ -1,6 +1,6 @@
 const std = @import("std");
 const w = @import("../../../WIN32.zig");
-const win32 = @import("c");
+// const win32 = @import("c");
 const e = @import("../../events.zig");
 const Key = e.Key;
 const Event = e.Event;
