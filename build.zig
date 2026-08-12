@@ -29,18 +29,9 @@ pub fn build(b: *std.Build) void {
     });
 
     if (target.result.os.tag == .linux) {
-        mod.addImport("c", translate_c.?.createModule());
+        mod.addImport("c", translate_c.?.addModule("c"));
     }
 
     // mod.linkSystemLibrary("user32", .{});
     // mod.linkSystemLibrary("kernel32", .{});
-    
-    // temporary to make ZLS happy
-    const exe = b.addExecutable(.{
-        .name = "",
-        .root_module = mod,
-        .use_llvm = true,
-    });
-
-    b.installArtifact(exe);
 }
