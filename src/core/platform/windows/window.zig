@@ -27,7 +27,7 @@ pub const Window = struct {
     width: u32,
     height: u32,
 
-    should_close: bool = false,
+    should_close: bool,
     events: std.ArrayList(Event),
     title: []u16,
     key_held: [std.meta.fields(Key).len]bool,
@@ -54,6 +54,7 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
     win.io = io;
     win.width = width;
     win.height = height;
+    win.should_close = false;
     // win.window = null;
 
     const hinstance = w.GetModuleHandleW(null) orelse @panic("could not get module handle!");
