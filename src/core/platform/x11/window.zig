@@ -6,6 +6,12 @@ const Key = e.Key;
 const Event = e.Event;
 const Modifiers = e.Modifiers;
 
+// TODO:
+//      Implement custom cursors?
+//      Add flags, implementation for the following:
+//          - No decorations
+//          - Min/Max size
+
 pub const WindowFlags = packed struct {
     resizable: bool = false,
     fullscreen: bool = false,
