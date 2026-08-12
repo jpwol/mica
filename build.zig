@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    var translate_c: *std.Build.Step.TranslateC = undefined;
+    var translate_c: ?*std.Build.Step.TranslateC = null;
 
     switch(target.result.os.tag) {
         .linux => {
@@ -13,17 +13,10 @@ pub fn build(b: *std.Build) void {
                 .target = target,
                 .optimize = optimize,
             });
-        },
-        else => {},
-    }
 
-    switch (target.result.os.tag) {
-        .linux => {
-            translate_c.linkSystemLibrary("X11", .{});
-            translate_c.linkSystemLibrary("Xrandr", .{});
-            translate_c.linkSystemLibrary("Xext", .{});
-        },
-        .windows => {
+            translate_c.?.linkSystemLibrary("X11", .{});
+            translate_c.?.linkSystemLibrary("Xrandr", .{});
+            translate_c.?.linkSystemLibrary("Xext", .{});
         },
         else => {},
     }
@@ -36,17 +29,18 @@ pub fn build(b: *std.Build) void {
     });
 
     if (target.result.os.tag == .linux) {
-        mod.addImport("c", translate_c.createModule());
+        mod.addImport("c", translate_c.?.createModule());
     }
 
     // mod.linkSystemLibrary("user32", .{});
     // mod.linkSystemLibrary("kernel32", .{});
-    //
-    // const exe = b.addExecutable(.{
-    //     .name = "",
-    //     .root_module = mod,
-    //     .use_llvm = true,
-    // });
+    
+    // temporary to make ZLS happy
+    const exe = b.addExecutable(.{
+        .name = "",
+        .root_module = mod,
+        .use_llvm = true,
+    });
 
-    // b.installArtifact(exe);
+    b.installArtifact(exe);
 }
