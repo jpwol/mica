@@ -6,6 +6,15 @@ const Key = e.Key;
 const Event = e.Event;
 const Modifiers = e.Modifiers;
 
+// TODO: 
+//      Implement cursor hiding/showing
+//      Implement custom cursor loading
+//      Add flags, implementation for the following:
+//          - Fullscreen
+//          - No decorations
+//          - Min/Max size?
+//      Query screen size? Implement way to place window either in user designated area or in a sensible location
+
 const windowProc = @import("event.zig").windowProc;
 
 pub const WindowFlags = packed struct {
@@ -97,6 +106,7 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
         hinstance, 
         @ptrCast(win),
     ) orelse { 
+        // FIXME: better error handling (custom GetLastError preferrably)
         std.debug.print("CreateWindowExW failed: {}\n", .{w.GetLastError()});
         return error.CreateWindowFailed; 
     };
