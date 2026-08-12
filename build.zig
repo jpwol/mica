@@ -38,8 +38,8 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
     });
 
-    if (translate_c) |t| {
-        mod.addImport("c", t.createModule());
+    if (builtin.os.tag == .linux) {
+        mod.addImport("c", translate_c.createModule());
     }
 
     // mod.linkSystemLibrary("user32", .{});
