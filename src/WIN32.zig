@@ -56,7 +56,31 @@ pub const WNDCLASSEXW = extern struct {
     hIconSm: ?HICON,
 };
 
-// WinUser.h
+pub const BITMAPINFOHEADER = extern struct {
+    biSize: u32,
+    biWidth: i32,
+    biHeight: i32,
+    biPlanes: u16,
+    biBitCount: u16,
+    biCompression: u32,
+    biSizeImage: u32,
+    biXPelsPerMeter: i32,
+    biYPelsPerMeter: i32,
+    biClrUsed: u32,
+    biClrImportant: u32,
+};
+
+pub const BITMAPINFO = extern struct {
+    bmiHeader: BITMAPINFOHEADER,
+    bmiColors: [1]u32,  // unused for BI_RGB/32bpp, required for struct layout
+};
+
+pub const BI_RGB: u32 = 0;
+pub const DIB_RGB_COLORS: u32 = 0;
+pub const SRCCOPY: u32 = 0x00CC0020;
+
+pub const HDC = *opaque{};
+pub const HBITMAP = *opaque{};
 
 // Keymaps
 pub const VK_BACK: u32 = 0x08;
@@ -281,3 +305,31 @@ pub inline fn getWheelDelta(wparam: WPARAM) i32 {
 }
 
 pub extern "user32" fn GetKeyState(nVirtKey: i32) callconv(.winapi) i16;
+
+pub extern "user32" fn GetDC(hwnd: ?HWND) callconv(.winapi) ?HDC;
+pub extern "user32" fn ReleaseDC(hwnd: ?HWND, hDC: HDC) callconv(.winapi) i32;
+pub extern "gdi32" fn CreateCompatibleDC(hdc: ?HDC) callconv(.winapi) ?HDC;
+pub extern "gdi32" fn DeleteDC(hdc: HDC) callconv(.winapi) i32;
+
+pub extern "gdi32" fn CreateDIBSection(
+    hdc: ?HDC,
+    pbmi: *const BITMAPINFO,
+    usage: u32,
+    ppvBits: *?*anyopaque,
+    hSection: ?*anyopaque,
+    offset: u32,
+) callconv(.winapi) ?HBITMAP;
+
+pub extern "gdi32" fn SelectObject(hdc: HDC, h: HBITMAP) callconv(.winapi) ?HBITMAP;
+pub extern "gdi32" fn DeleteObject(ho: HBITMAP) callconv(.winapi) i32;
+pub extern "gdi32" fn BitBlt(
+    hdc: HDC,
+    x: i32,
+    y: i32,
+    cx: i32,
+    cy: i32,
+    hdcSrc: HDC,
+    x1: i32,
+    y1: i32,
+    rop: u32,
+) callconv(.winapi) ?HBITMAP;
