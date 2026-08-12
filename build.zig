@@ -1,26 +1,23 @@
 const std = @import("std");
-const builtin = @import("builtin");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const translate_c = switch(builtin.os.tag) {
-        .linux => b.addTranslateC(.{
-            .root_source_file = b.path("include/linux.h"),
-            .target = target,
-            .optimize = optimize,
-        }),
-        .windows => null,
-        // .windows => b.addTranslateC(.{
-        //     .root_source_file = b.path("include/windows.h"),
-        //     .target = target,
-        //     .optimize = optimize,
-        // }),
-        else => @compileError("mica: unsupported platform"),
-    };
+    var translate_c: *std.Build.Step.TranslateC = undefined;
 
-    switch (builtin.os.tag) {
+    switch(target.result.os.tag) {
+        .linux => {
+            translate_c = b.addTranslateC(.{
+                .root_source_file = b.path("include/linux.h"),
+                .target = target,
+                .optimize = optimize,
+            });
+        },
+        else => {},
+    }
+
+    switch (target.result.os.tag) {
         .linux => {
             translate_c.linkSystemLibrary("X11", .{});
             translate_c.linkSystemLibrary("Xrandr", .{});
@@ -28,7 +25,7 @@ pub fn build(b: *std.Build) void {
         },
         .windows => {
         },
-        else => @compileError("mica: unsupported platform"),
+        else => {},
     }
 
     const mod = b.addModule("mica", .{
@@ -38,7 +35,7 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
     });
 
-    if (builtin.os.tag == .linux) {
+    if (target.result.os.tag == .linux) {
         mod.addImport("c", translate_c.createModule());
     }
 
