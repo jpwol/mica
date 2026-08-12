@@ -3,8 +3,7 @@ const xlib = @import("c");
 const sys = std.os.linux;
 
 const Canvas = @import("../../../render/software.zig");
-const window_mod = @import("window.zig");
-const Window = window_mod.Window;
+const Window = @import("window.zig").Window;
 
 const IPC_PRIVATE = 0;
 const IPC_CREAT = 0o1000;
