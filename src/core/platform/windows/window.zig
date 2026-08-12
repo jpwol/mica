@@ -57,7 +57,7 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
     win.should_close = false;
     // win.window = null;
 
-    const hinstance = w.GetModuleHandleW(null) orelse @panic("could not get module handle!");
+    const hinstance = w.GetModuleHandleW(null) orelse return error.GetModuleHandleFailed;
 
     const class_name = std.unicode.utf8ToUtf16LeStringLiteral("MicaWindow");
     const w_title = try std.unicode.utf8ToUtf16LeAlloc(allocator, title);
@@ -83,7 +83,7 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
 
     const class_atom = w.RegisterClassExW(&wc);
     if (class_atom == 0) {
-        std.debug.print("RegisterClassExW failed: {}\n", .{w.GetLastError()});
+        return error.RegisterClassFailed;
     }
 
     var style: w.DWORD = w.WS_OVERLAPPEDWINDOW;
@@ -108,7 +108,7 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
         @ptrCast(win),
     ) orelse { 
         // FIXME: better error handling (custom GetLastError preferrably)
-        std.debug.print("CreateWindowExW failed: {}\n", .{w.GetLastError()});
+        // std.debug.print("CreateWindowExW failed: {}\n", .{w.GetLastError()});
         return error.CreateWindowFailed; 
     };
     
