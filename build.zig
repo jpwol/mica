@@ -11,11 +11,12 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .optimize = optimize,
         }),
-        .windows => b.addTranslateC(.{
-            .root_source_file = b.path("include/windows.h"),
-            .target = target,
-            .optimize = optimize,
-        }),
+        .windows => null,
+        // .windows => b.addTranslateC(.{
+        //     .root_source_file = b.path("include/windows.h"),
+        //     .target = target,
+        //     .optimize = optimize,
+        // }),
         else => @compileError("mica: unsupported platform"),
     };
 
@@ -26,7 +27,6 @@ pub fn build(b: *std.Build) void {
             translate_c.linkSystemLibrary("Xext", .{});
         },
         .windows => {
-
         },
         else => @compileError("mica: unsupported platform"),
     }
@@ -36,19 +36,20 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .link_libc = true,
-        .imports = &.{
-            .{
-                .name = "c",
-                .module = translate_c.createModule(),
-            },
-        },
     });
 
-    const exe = b.addExecutable(.{
-        .name = "",
-        .root_module = mod,
-        .use_llvm = true,
-    });
+    if (translate_c) |t| {
+        mod.addImport("c", t.createModule());
+    }
 
-    b.installArtifact(exe);
+    // mod.linkSystemLibrary("user32", .{});
+    // mod.linkSystemLibrary("kernel32", .{});
+    //
+    // const exe = b.addExecutable(.{
+    //     .name = "",
+    //     .root_module = mod,
+    //     .use_llvm = true,
+    // });
+
+    // b.installArtifact(exe);
 }
