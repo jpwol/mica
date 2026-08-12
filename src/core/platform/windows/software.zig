@@ -1,6 +1,6 @@
 const std = @import("std");
 const w = @import("../../../WIN32.zig");
-const win32 = @import("c");
+// const win32 = @import("c");
 
 const Canvas = @import("../../../render/software.zig");
 const Window = @import("window.zig").Window;
@@ -38,6 +38,10 @@ pub fn createSoftwareRenderer(allocator: std.mem.Allocator, win: *Window) !Softw
 
     const width = win.width;
     const height = win.height;
+
+    if (width == 0 or height == 0 or width > 16384 or height > 16384) {
+        @panic("createSoftwareRenderer: suspicious width/height");
+    }
 
     const screen_dc = w.GetDC(win.window) orelse return error.GetDCFailed;
     defer _ = w.ReleaseDC(win.window, screen_dc);
