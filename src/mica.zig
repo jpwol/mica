@@ -17,6 +17,7 @@ const event_handler = switch (builtin.target.os.tag) {
 
 const renderer = switch (builtin.target.os.tag) {
     .linux => @import("core/platform/x11/software.zig"),
+    .windows => @import("core/platform/windows/software.zig"),
     else => @compileError("mica: unsupported platform"),
 };
 
