@@ -28,8 +28,10 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
     });
 
+
     if (target.result.os.tag == .linux) {
         mod.addImport("c", translate_c.?.addModule("c"));
+        mod.linkSystemLibrary("pulse", .{});
     }
 
     // mod.linkSystemLibrary("user32", .{});
