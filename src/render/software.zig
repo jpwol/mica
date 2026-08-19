@@ -1,5 +1,4 @@
 const std = @import("std");
-const Window = @import("../core/platform/x11/window.zig").Window;
 
 pub const Canvas = @This();
 
@@ -10,6 +9,7 @@ stride: u32,
 
 pub const Color = struct { r: u8, g: u8, b: u8, a: u8 = 255 };
 
+// consider bitshifting the color to a variable and assinging it in one step?
 pub fn setPixel(canvas: *Canvas, x: i32, y: i32, color: Color) void {
     if (x < 0 or y < 0 or x >= canvas.width or y >= canvas.height) return;
 
@@ -20,6 +20,7 @@ pub fn setPixel(canvas: *Canvas, x: i32, y: i32, color: Color) void {
     canvas.pixels[idx + 3] = color.a;
 }
 
+// test performance on calling setPixel vs performing the buffer assignment locally
 pub fn drawLine(canvas: *Canvas, x1: i32, y1: i32, x2: i32, y2: i32, color: Color) void {
     var x: i32 = x1;
     var y: i32 = y1;
