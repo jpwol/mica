@@ -16,11 +16,12 @@ pub const SoftwareRenderer = struct {
     ximage: *xlib.XImage,
     buffer: []u8,
     gc: xlib.GC,
-    width: u32,
-    height: u32,
+    width: u24,
+    height: u24,
     win: *Window,
 };
 
+// FIXME: Enable SHM on X11 native displays if available, disable on Wayland displays
 pub fn createSoftwareRenderer(allocator: std.mem.Allocator, win: *Window) !SoftwareRenderer {
     // const shm_available = xlib.XShmQueryExtension(win.display) != 0;
     const shm_available = false;

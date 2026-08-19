@@ -32,11 +32,11 @@ pub const Window = struct {
     events: std.ArrayList(Event),
     cursor: ?xlib.Cursor,
 
-    width: u32,
-    height: u32,
+    width: u24,
+    height: u24,
 };
 
-pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8, width: u32, height: u32, flags: WindowFlags) !*Window {
+pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8, width: u24, height: u24, flags: WindowFlags) !*Window {
     var win: *Window = try allocator.create(Window);
 
     win.width = width;
