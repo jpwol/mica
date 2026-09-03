@@ -347,6 +347,7 @@ pub fn destroyWindow(allocator: std.mem.Allocator, win: *Window) void {
         _ = xlib.XFreeCursor(win.display, c);
     }
     _ = xlib.XDestroyWindow(win.display, win.window);
+    _ = xlib.XFlush(win.display);
     win.events.deinit(allocator);
     allocator.destroy(win);
 }

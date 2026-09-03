@@ -51,7 +51,7 @@ const DataChunkList = struct {
 pub const WavSpec = struct {
     format: WavFormat,
     channel: Channel,
-    sample_count: usize,
+    bitDepth: u16,
     samples: []f32,
 };
 
@@ -132,7 +132,7 @@ pub fn loadWAVFile(io: std.Io, allocator: std.mem.Allocator, path: []const u8, d
     return .{
         .format = fmtChunk.FormatTag,
         .channel = fmtChunk.Channel,
-        .sample_count = dataChunks.totalSamples,
+        .bitDepth = fmtChunk.BitsPerSample,
         .samples = out_buf,
     };
 }
