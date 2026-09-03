@@ -10,6 +10,12 @@ const MouseButton = e.MouseButton;
 const Key = e.Key;
 const Modifiers = e.Modifiers;
 
+// FIXME: consider changing this to not use a while loop, but have the user create the while loop instead.
+// REASON: if the user wants to use the returned []Event array, they have to iterate over it. This creates an
+//         unavoidable O(n^2) scenario, compared to allowing them to create a while loop would be O(n) for event
+//         handling.
+//
+// FIXME: This function currently takes a *Window. It should be refactored to be agnostic to windows.
 pub fn pollEvents(io: std.Io, allocator: std.mem.Allocator, win: *Window) ![]const Event {
     _ = io;
     @memset(&win.key_pressed_this_frame, false);
