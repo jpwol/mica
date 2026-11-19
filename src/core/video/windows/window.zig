@@ -21,6 +21,9 @@ pub const WindowFlags = packed struct {
     resizable: bool = false,
 };
 
+const keyLen = std.meta.fieldNames(Key).len;
+
+
 pub const Window = struct {
     hinstance: w.HINSTANCE,
     window: w.HWND,
@@ -30,10 +33,10 @@ pub const Window = struct {
     should_close: bool,
     events: std.ArrayList(Event),
     title: []u16,
-    key_held: [std.meta.fields(Key).len]bool,
-    key_pressed_this_frame: [std.meta.fields(Key).len]bool,
-    key_released_this_frame: [std.meta.fields(Key).len]bool,
-    key_down_time: [std.meta.fields(Key).len]?i64,
+    key_held: [keyLen]bool,
+    key_pressed_this_frame: [keyLen]bool,
+    key_released_this_frame: [keyLen]bool,
+    key_down_time: [keyLen]?i64,
     modifiers: Modifiers,
 
     allocator: std.mem.Allocator,
@@ -45,10 +48,10 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
 
     // initialize struct members
     win.events = try .initCapacity(allocator, 0);
-    win.key_held = [_]bool{false} ** std.meta.fields(Key).len;
-    win.key_pressed_this_frame = [_]bool{false} ** std.meta.fields(Key).len;
-    win.key_released_this_frame = [_]bool{false} ** std.meta.fields(Key).len;
-    win.key_down_time = [_]?i64{null} ** std.meta.fields(Key).len;
+    win.key_held = @splat(false);
+    win.key_pressed_this_frame = @splat(false);
+    win.key_released_this_frame = @splat(false);
+    win.key_down_time = @splat(null);
     win.modifiers = .{};
     win.allocator = allocator;
     win.io = io;

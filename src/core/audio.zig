@@ -48,8 +48,8 @@ pub const MAX_VOICES = 64; // fixed cap. tune if it becomes limiting
 pub const MAX_RAW_STREAMS = 16;
 
 pub const AudioState = struct {
-    voices: [MAX_VOICES]Voice = [_]Voice{.{}} ** MAX_VOICES,
-    raw_streams: [MAX_RAW_STREAMS]RawStream = [_]RawStream{.{}} ** MAX_RAW_STREAMS,
+    voices: [MAX_VOICES]Voice = @splat(.{}),
+    raw_streams: [MAX_RAW_STREAMS]RawStream = @splat(.{}),
     next_generation: u32 = 1,
 };
 

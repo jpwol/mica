@@ -17,6 +17,8 @@ pub const WindowFlags = packed struct {
     fullscreen: bool = false,
 };
 
+const keyLen = std.meta.fieldNames(Key).len;
+
 pub const Window = struct {
     display: *xlib.Display,
     window: xlib.Window,
@@ -24,10 +26,10 @@ pub const Window = struct {
     wm_delete_window: xlib.Atom,
     fullscreen: bool,
     should_close: bool,
-    key_held: [std.meta.fields(Key).len]bool,
-    key_pressed_this_frame: [std.meta.fields(Key).len]bool,
-    key_released_this_frame: [std.meta.fields(Key).len]bool,
-    key_down_time: [std.meta.fields(Key).len]?i64,
+    key_held: [keyLen]bool,
+    key_pressed_this_frame: [keyLen]bool,
+    key_released_this_frame: [keyLen]bool,
+    key_down_time: [keyLen]?i64,
     modifiers: Modifiers,
     events: std.ArrayList(Event),
     cursor: ?xlib.Cursor,
@@ -43,10 +45,10 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
     win.height = height;
 
     win.events = try .initCapacity(allocator, 0);
-    win.key_held = [_]bool{false} ** std.meta.fields(Key).len;
-    win.key_pressed_this_frame = [_]bool{false} ** std.meta.fields(Key).len;
-    win.key_released_this_frame = [_]bool{false} ** std.meta.fields(Key).len;
-    win.key_down_time = [_]?i64{null} ** std.meta.fields(Key).len;
+    win.key_held = @splat(false);
+    win.key_pressed_this_frame = @splat(false);
+    win.key_released_this_frame = @splat(false);
+    win.key_down_time = @splat(null);
     win.should_close = false;
     win.modifiers = .{};
 
@@ -138,7 +140,7 @@ pub fn createWindow(io: std.Io, allocator: std.mem.Allocator, title: []const u8,
     _ = xlib.XMapWindow(display, window);
 
     if (flags.fullscreen) {
-        try applyFullscreen(io, display, window, screen); 
+        try applyFullscreen(io, display, window, screen);
         win.fullscreen = true;
     }
     win.display = display;
@@ -264,7 +266,7 @@ fn applyFullscreen(io: std.Io, display: *xlib.Display, window: xlib.Window, scre
                     // setBypassCompositor(display, window, true);
                     return;
                     // confirmed — done
-                } 
+                }
             }
         }
     }
@@ -355,18 +357,10 @@ pub fn destroyWindow(allocator: std.mem.Allocator, win: *Window) void {
 fn setBypassCompositor(display: *xlib.Display, window: xlib.Window, bypass: bool) void {
     const bypass_atom = xlib.XInternAtom(display, "_NET_WM_BYPASS_COMPOSITOR", xlib.False);
     var value: c_long = @intFromBool(bypass);
-    _ = xlib.XChangeProperty(display, 
-        window,
-        bypass_atom,
-        xlib.XA_CARDINAL,
-        32,
-        xlib.PropModeReplace,
-        @ptrCast(&value),
-        1
-    );
+    _ = xlib.XChangeProperty(display, window, bypass_atom, xlib.XA_CARDINAL, 32, xlib.PropModeReplace, @ptrCast(&value), 1);
 }
 
-fn getPrimaryMonitorOrigin(display: *xlib.Display, root: xlib.Window) struct {x: i32, y: i32} {
+fn getPrimaryMonitorOrigin(display: *xlib.Display, root: xlib.Window) struct { x: i32, y: i32 } {
     const primary_output = xlib.XRRGetOutputPrimary(display, root);
     const resources = xlib.XRRGetScreenResourcesCurrent(display, root);
     defer xlib.XRRFreeScreenResources(resources);
@@ -391,13 +385,7 @@ pub fn hideCursor(win: *Window) void {
     } else {
         const empty_data = [_]u8{0};
 
-        const bitmap = xlib.XCreateBitmapFromData(
-            win.display,
-            win.window,
-            &empty_data,
-            1,
-            1
-        );
+        const bitmap = xlib.XCreateBitmapFromData(win.display, win.window, &empty_data, 1, 1);
 
         var fg = xlib.XColor{};
         var bg = xlib.XColor{};

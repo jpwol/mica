@@ -54,7 +54,7 @@ pub fn init(allocator: std.mem.Allocator) !*AudioBackend {
 
     // backend.state.io = io;
     backend.state.next_generation = 1;
-    backend.state.voices = [_]audio.Voice{.{}} ** 64;
+    backend.state.voices = @splat(.{});
 
 
     backend.mainloop = pa.pa_threaded_mainloop_new() orelse return error.MainLoopCreateFailed;
