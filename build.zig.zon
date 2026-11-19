@@ -2,7 +2,7 @@
     .name = .mica,
     .version = "0.0.1",
     .fingerprint = 0xdb6b69c77f837337,
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .paths = .{
         "build.zig",
         "build.zig.zon",
