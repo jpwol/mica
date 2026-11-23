@@ -21,7 +21,7 @@ pub const WindowFlags = packed struct {
     resizable: bool = false,
 };
 
-const keyLen = std.meta.fieldNames(Key).len;
+const keyLen = @typeInfo(Key).@"enum".field_names.len;
 
 
 pub const Window = struct {
