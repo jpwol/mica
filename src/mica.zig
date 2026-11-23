@@ -70,7 +70,7 @@ const render_backend = switch (builtin.target.os.tag) {
 
 const audio_driver = switch (builtin.target.os.tag) {
     .linux => @import("core/audio/pulseaudio/pulse.zig"),
-    .windows => @compileError("mica: WASAPI backend not yet implemented"),
+    .windows => @import("core/audio/wasapi/wasapi.zig"),
     else => @compileError("mica: unsupported platform"),
 };
 
